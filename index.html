@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldGuessr — Free GeoGuessr Alternative</title>
+  <meta name="description" content="Free GeoGuessr alternative with AI hints, multiplayer rooms, and endless mode.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+<!-- ══ HOME ═══════════════════════════════════════════════ -->
+<div class="screen active" id="screen-home">
+  <div class="home-logo">WorldGuessr</div>
+  <p class="home-tagline">Explore. Discover. Guess.</p>
+  <button class="btn-primary btn-huge" id="btn-play">Play</button>
+  <div class="home-grid">
+    <button class="home-grid-btn" id="btn-multiplayer"><span class="icon">🎮</span>Multiplayer</button>
+    <button class="home-grid-btn" id="btn-battle"><span class="icon">⚔️</span>Battle Link</button>
+    <button class="home-grid-btn" id="btn-leaderboard"><span class="icon">🏆</span>Leaderboard</button>
+    <button class="home-grid-btn" id="btn-settings-home"><span class="icon">⚙️</span>Settings</button>
+  </div>
+  <p class="home-footer">Free forever · No account needed · Wikimedia Commons · OpenStreetMap</p>
+</div>
+
+<!-- ══ SETUP ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-setup">
+  <div class="setup-header">
+    <button class="btn-back" id="setup-back">← Back</button>
+    <h2>Game Setup</h2>
+  </div>
+  <div class="setup-body">
+
+    <div class="option-group">
+      <label>Game Type</label>
+      <div class="modes-grid">
+        <button class="type-card active" data-type="normal">
+          <span class="mode-icon">🎯</span>
+          <span class="mode-name">Classic</span>
+          <span class="mode-desc">Fixed rounds, scored</span>
+        </button>
+        <button class="type-card" data-type="endless">
+          <span class="mode-icon">∞</span>
+          <span class="mode-name">Endless</span>
+          <span class="mode-desc">Play until you stop</span>
+        </button>
+        <button class="type-card" data-type="famous">
+          <span class="mode-icon">⭐</span>
+          <span class="mode-name">Famous Places</span>
+          <span class="mode-desc">Iconic world landmarks</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="setup-region-row">
+      <div class="option-group">
+        <label>Region</label>
+        <div class="option-pills" id="region-pills">
+          <button class="pill active" data-value="world">🌍 World</button>
+          <button class="pill" data-value="continent">By Continent</button>
+          <button class="pill" data-value="country">By Country</button>
+        </div>
+      </div>
+      <div class="option-group" id="setup-sub-select" style="display:none">
+        <select class="setup-select" id="setup-continent-select"><option value="">— Choose a continent —</option></select>
+      </div>
+      <div class="option-group" id="setup-country-wrap" style="display:none">
+        <select class="setup-select" id="setup-country-select"><option value="">— Choose a country —</option></select>
+      </div>
+    </div>
+
+    <div id="setup-rounds-row">
+      <div class="option-group">
+        <label>Rounds</label>
+        <div class="pill-row">
+          <div class="option-pills" id="rounds-pills">
+            <button class="pill" data-value="3">3</button>
+            <button class="pill active" data-value="5">5</button>
+            <button class="pill" data-value="10">10</button>
+          </div>
+          <div class="custom-input-wrap">
+            <input class="custom-num" id="rounds-custom" type="number" min="1" max="99" value="5">
+            <span class="custom-unit">rounds</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <label>Time per Round</label>
+      <div class="pill-row">
+        <div class="option-pills" id="timer-pills">
+          <button class="pill" data-value="0">None</button>
+          <button class="pill" data-value="30">30s</button>
+          <button class="pill" data-value="60">1m</button>
+          <button class="pill active" data-value="120">2m</button>
+        </div>
+        <div class="custom-input-wrap">
+          <input class="custom-num" id="timer-custom" type="number" min="0" max="600" value="120">
+          <span class="custom-unit">sec</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="setup-footer">
+    <button class="btn-primary" id="btn-start-game">Start Game →</button>
+  </div>
+</div>
+
+<!-- ══ GAME ════════════════════════════════════════════════ -->
+<div class="screen" id="screen-game">
+
+  <!-- Fullscreen panorama viewer -->
+  <div id="mapillary-viewer"></div>
+
+  <!-- Loading overlay -->
+  <div class="viewer-loading" id="viewer-loading">
+    <div class="spinner"></div><p>Loading location…</p>
+  </div>
+
+  <!-- Floating HUD — top bar -->
+  <div class="game-hud">
+    <div class="hud-left">
+      <span class="game-round">Round <span id="round-current">1</span>&thinsp;/&thinsp;<span id="round-total">5</span></span>
+      <span class="game-timer" id="game-timer-display">2:00</span>
+    </div>
+    <div class="hud-right">
+      <span class="game-score">Score: <span id="game-score-display">0</span></span>
+      <button class="btn-end-game" id="btn-end-game" style="display:none">End Game</button>
+      <button class="btn-ghost hud-icon-btn" id="btn-settings-game">⚙️</button>
+    </div>
+  </div>
+
+  <!-- Compass (top-center) -->
+  <div class="compass" id="compass">
+    <svg viewBox="0 0 70 70" class="compass-svg">
+      <circle cx="35" cy="35" r="33" fill="rgba(10,14,23,.82)" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
+      <line x1="35" y1="4"  x2="35" y2="9"  stroke="rgba(255,255,255,.3)" stroke-width="1.5"/>
+      <line x1="35" y1="61" x2="35" y2="66" stroke="rgba(255,255,255,.3)" stroke-width="1.5"/>
+      <line x1="4"  y1="35" x2="9"  y2="35" stroke="rgba(255,255,255,.3)" stroke-width="1.5"/>
+      <line x1="61" y1="35" x2="66" y2="35" stroke="rgba(255,255,255,.3)" stroke-width="1.5"/>
+      <line x1="9"  y1="9"  x2="12" y2="12" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+      <line x1="61" y1="9"  x2="58" y2="12" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+      <line x1="9"  y1="61" x2="12" y2="58" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+      <line x1="61" y1="61" x2="58" y2="58" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+      <text x="35" y="22"  text-anchor="middle" fill="#ff6b6b" font-size="10" font-weight="800" font-family="system-ui,sans-serif">N</text>
+      <text x="51" y="39"  text-anchor="middle" fill="#8892a4" font-size="8"  font-weight="700" font-family="system-ui,sans-serif">E</text>
+      <text x="35" y="55"  text-anchor="middle" fill="#8892a4" font-size="8"  font-weight="700" font-family="system-ui,sans-serif">S</text>
+      <text x="19" y="39"  text-anchor="middle" fill="#8892a4" font-size="8"  font-weight="700" font-family="system-ui,sans-serif">W</text>
+      <g id="compass-needle" transform="rotate(0 35 35)">
+        <polygon points="35,12 38,35 35,30 32,35" fill="#ff6b6b"/>
+        <polygon points="35,58 38,35 35,40 32,35" fill="#3a4560"/>
+      </g>
+      <circle cx="35" cy="35" r="2.5" fill="rgba(255,255,255,.65)"/>
+    </svg>
+    <div class="compass-dir" id="compass-dir">N</div>
+  </div>
+
+  <!-- AI pill button -->
+  <button class="ai-pill" id="btn-ai-analyze">✦ AI Overview</button>
+  <div class="ai-card" id="ai-hint-popup" style="display:none">
+    <p class="ai-card-text" id="ai-hint-text"></p>
+    <button class="ai-card-close" id="btn-close-ai">✕</button>
+  </div>
+
+  <!-- Clues toggle (left side) -->
+  <div class="clues-float">
+    <button class="clues-float-toggle" id="btn-toggle-clues">🔍 Clues</button>
+    <div class="clues-float-panel" id="clues-float-panel">
+      <div class="clues-header">
+        <span>Clues</span>
+        <span id="clues-used-count">0 used</span>
+      </div>
+      <div id="clues-revealed-list"></div>
+      <div class="clues-available">
+        <button class="clue-btn" data-clue="driving_side">🚗 Driving Side</button>
+        <button class="clue-btn" data-clue="climate">🌤️ Climate Zone</button>
+        <button class="clue-btn" data-clue="language">✍️ Script / Language</button>
+        <button class="clue-btn" data-clue="continent">🗺️ Continent</button>
+        <button class="clue-btn" data-clue="country">🏳️ Country</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multiplayer live scores (floating, hidden unless MP) -->
+  <div id="mp-live-panel" style="display:none">
+    <div class="mp-panel-header">🎮 Live Scores</div>
+  </div>
+
+  <!-- Floating guess map — bottom right -->
+  <div class="float-map" id="float-map">
+    <p class="float-map-hint">Click map to place guess</p>
+    <div id="guess-map"></div>
+    <div class="float-map-actions">
+      <button class="btn-ghost" id="btn-clear-guess">Clear</button>
+      <button class="btn-primary" id="btn-make-guess" disabled>Guess →</button>
+      <button class="btn-skip" id="btn-skip-guess">skip</button>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<!-- ══ ROUND RESULT ════════════════════════════════════════ -->
+<div class="screen" id="screen-round-result">
+  <div class="result-header"><h2>Round <span id="result-round">1</span> Result</h2></div>
+  <div class="result-map-container"><div id="result-map"></div></div>
+  <div class="result-stats">
+    <div class="stat-card"><div class="stat-label">Distance</div><div class="stat-value" id="result-distance">—</div></div>
+    <div class="stat-card"><div class="stat-label">Base Score</div><div class="stat-value positive" id="result-base-score">0</div></div>
+    <div class="stat-card" id="result-clue-penalty-box"><div class="stat-label">Clue Penalty</div><div class="stat-value negative" id="result-clue-penalty">0</div></div>
+    <div class="stat-card"><div class="stat-label">Round Score</div><div class="stat-value" id="result-score" style="color:var(--gold)">0</div></div>
+  </div>
+  <div style="padding:0 16px 4px;font-size:12px;color:var(--muted)" id="result-location-name"></div>
+  <div class="result-footer">
+    <button class="btn-secondary" onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('result-location-name').textContent);showToast('Location copied!','success')">Copy Location</button>
+    <button class="btn-primary" id="btn-next-round">Next Round →</button>
+  </div>
+</div>
+
+<!-- ══ GAME OVER ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-game-over">
+  <div class="gameover-header">
+    <h1>Game Over!</h1>
+    <div class="gameover-score-row">
+      <span class="gameover-score-big" id="gameover-score">0</span>
+      <span class="gameover-score-max">/ <span id="gameover-max-score">25000</span></span>
+    </div>
+    <div id="gameover-rank"></div>
+  </div>
+  <div class="gameover-progress">
+    <div class="gameover-progress-bar"><div class="gameover-progress-fill" id="gameover-progress-fill" style="width:0%"></div></div>
+    <span id="gameover-pct">0%</span>
+  </div>
+  <!-- Multiplayer leaderboard (hidden unless MP) -->
+  <div id="gameover-mp-leaderboard" style="display:none;padding:0 16px 8px"></div>
+  <div class="gameover-map-wrap"><div id="gameover-map"></div></div>
+  <div id="gameover-rounds"></div>
+  <div class="gameover-actions">
+    <button class="btn-secondary" id="btn-share-result">Share 📋</button>
+    <button class="btn-secondary" id="btn-view-leaderboard">Leaderboard 🏆</button>
+    <button class="btn-primary" id="btn-play-again">Play Again</button>
+  </div>
+</div>
+
+<!-- ══ LEADERBOARD ═════════════════════════════════════════ -->
+<div class="screen" id="screen-leaderboard">
+  <div class="lb-header">
+    <button class="btn-back" id="lb-back">← Back</button>
+    <h2>Leaderboard</h2>
+  </div>
+  <div class="lb-tabs">
+    <button class="lb-tab active" data-mode="world">🌍 World</button>
+    <button class="lb-tab" data-mode="famous">⭐ Famous</button>
+    <button class="lb-tab" data-mode="EU">🇪🇺 Europe</button>
+    <button class="lb-tab" data-mode="NA">🌎 Americas</button>
+    <button class="lb-tab" data-mode="AS">🌏 Asia</button>
+  </div>
+  <div class="lb-streak-row">
+    <div class="lb-streak"><span class="lb-streak-label">🔥 Streak</span><span class="lb-streak-val" id="streak-value">0</span></div>
+    <div class="lb-streak"><span class="lb-streak-label">Best</span><span class="lb-streak-val" id="streak-best">0</span></div>
+  </div>
+  <div id="lb-list"></div>
+</div>
+
+<!-- ══ MULTIPLAYER ═════════════════════════════════════════ -->
+<div class="screen" id="screen-multiplayer">
+  <div class="mp-header">
+    <button class="btn-back" id="mp-back">← Back</button>
+    <h2>🎮 Multiplayer</h2>
+  </div>
+  <div class="mp-body">
+
+    <!-- Create Room -->
+    <div class="mp-section">
+      <h3>Create a Room</h3>
+      <p>Pick a region, create the room, and share the 5-digit code with friends. Everyone plays the same locations simultaneously.</p>
+
+      <div class="option-group">
+        <label>Your Name</label>
+        <input class="setup-input" type="text" id="mp-name-input" placeholder="Host" maxlength="20">
+      </div>
+      <div class="option-group">
+        <label>Region</label>
+        <div class="option-pills" id="mp-region-pills">
+          <button class="pill active" data-value="world">🌍 World</button>
+          <button class="pill" data-value="continent">Continent</button>
+          <button class="pill" data-value="country">Country</button>
+        </div>
+      </div>
+      <div class="option-group">
+        <label>Rounds</label>
+        <div class="pill-row">
+          <div class="option-pills" id="mp-rounds-pills">
+            <button class="pill" data-value="3">3</button>
+            <button class="pill active" data-value="5">5</button>
+            <button class="pill" data-value="10">10</button>
+          </div>
+          <div class="custom-input-wrap">
+            <input class="custom-num" id="mp-rounds-custom" type="number" min="1" max="99" value="5">
+            <span class="custom-unit">rounds</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="option-group">
+        <label>Time per Round</label>
+        <div class="pill-row">
+          <div class="option-pills" id="mp-timer-pills">
+            <button class="pill" data-value="0">None</button>
+            <button class="pill" data-value="30">30s</button>
+            <button class="pill" data-value="60">1m</button>
+            <button class="pill active" data-value="120">2m</button>
+          </div>
+          <div class="custom-input-wrap">
+            <input class="custom-num" id="mp-timer-custom" type="number" min="0" max="600" value="120">
+            <span class="custom-unit">sec</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-create-room">Create Room →</button>
+
+      <div class="mp-code-box" id="mp-room-code-box" style="display:none">
+        <span class="mp-code-label">Room Code</span>
+        <span class="mp-code" id="mp-room-code-display">—</span>
+        <button class="btn-secondary" id="btn-copy-room-code">Copy Code</button>
+      </div>
+    </div>
+
+    <!-- Join Room -->
+    <div class="mp-section">
+      <h3>Join a Room</h3>
+      <p>Enter a 5-digit code to join a friend's game.</p>
+      <div class="option-group">
+        <label>Your Name</label>
+        <input class="setup-input" type="text" id="mp-join-name" placeholder="Player" maxlength="20">
+      </div>
+      <div class="mp-join-row">
+        <input class="setup-input mp-code-input" type="text" id="mp-join-code" placeholder="12345" maxlength="5" pattern="\d{5}" inputmode="numeric">
+        <button class="btn-primary" id="btn-join-room">Join →</button>
+      </div>
+    </div>
+
+    <!-- Firebase setup hint -->
+    <div class="mp-hint">
+      <strong>Requires Firebase:</strong> Create a free project at
+      <a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a>,
+      enable Realtime Database, set rules to allow public read/write, then paste the database URL in ⚙️ Settings.
+    </div>
+  </div>
+</div>
+
+<!-- ══ BATTLE ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-battle">
+  <div class="battle-header">
+    <button class="btn-back" id="battle-back">← Back</button>
+    <h2>⚔️ Battle Link</h2>
+  </div>
+  <div class="battle-body">
+    <div class="battle-section">
+      <h3>Create a Challenge</h3>
+      <p>Generate a link and share it. You both play the same locations — whoever scores higher wins!</p>
+      <div class="option-group">
+        <label>Mode</label>
+        <div class="option-pills" id="battle-mode-pills">
+          <button class="pill active" data-value="world">🌍 World</button>
+          <button class="pill" data-value="famous">⭐ Famous</button>
+        </div>
+      </div>
+      <div class="option-group">
+        <label>Rounds</label>
+        <div class="option-pills" id="battle-rounds-pills">
+          <button class="pill" data-value="3">3</button>
+          <button class="pill active" data-value="5">5</button>
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-generate-battle">Generate Challenge Link</button>
+      <div class="battle-link-row" id="battle-link-box" style="display:none">
+        <input type="text" id="battle-link-input" readonly placeholder="Your challenge link">
+        <button class="btn-secondary" id="btn-copy-link">Copy</button>
+      </div>
+      <button class="btn-secondary" id="btn-play-battle" style="display:none">Play Now →</button>
+    </div>
+    <div class="battle-section">
+      <h3>Join a Challenge</h3>
+      <p>Paste a challenge link from a friend.</p>
+      <div class="battle-join-row">
+        <input type="text" id="battle-join-input" placeholder="https://…?battle=1&ids=…">
+        <button class="btn-primary" id="btn-join-battle">Join →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS MODAL ══════════════════════════════════════ -->
+<div class="modal" id="modal-settings" style="display:none">
+  <div class="modal-overlay" id="settings-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>⚙️ Settings</h2>
+      <button class="btn-close" id="settings-close">✕</button>
+    </div>
+
+    <div class="settings-group">
+      <label>Mapillary Access Token <span class="badge-optional">optional — enables 360° view</span></label>
+      <input type="text" id="mapillary-token-input" placeholder="MLY|xxxxxxxxxxxxxxxx">
+      <p class="settings-hint">
+        Without a token, the game uses free Wikimedia Commons photos with pan &amp; zoom.
+        For interactive 360° panoramas, get a free token at
+        <a href="https://www.mapillary.com/developer/api-documentation" target="_blank" rel="noopener">mapillary.com/developer</a>
+        → Create Application → copy the Client Token.
+      </p>
+    </div>
+
+    <div class="settings-group">
+      <label>Anthropic API Key <span class="badge-optional">for AI analysis</span></label>
+      <input type="password" id="anthropic-key-input" placeholder="sk-ant-…">
+      <p class="settings-hint">
+        Used for the "🤖 AI Analyze" button. Get a key at
+        <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.
+        Stored locally in your browser only.
+      </p>
+    </div>
+
+    <div class="settings-group">
+      <label>Firebase Database URL <span class="badge-optional">for multiplayer</span></label>
+      <input type="text" id="firebase-url-input" placeholder="https://your-project-default-rtdb.firebaseio.com">
+      <p class="settings-hint">
+        Create a free Firebase project, enable Realtime Database, set rules to allow public read/write, and paste the URL here.
+      </p>
+    </div>
+
+    <hr class="settings-divider">
+
+    <div class="settings-group">
+      <p class="settings-hint">WorldGuessr v1.1 · Imagery by Mapillary · Maps by OpenStreetMap / CARTO</p>
+    </div>
+
+    <div class="settings-danger">
+      <button class="btn-danger" onclick="if(confirm('Clear all scores?')){clearAllData();showToast('Data cleared','success');closeSettings();}">Clear All Data</button>
+    </div>
+
+    <button class="btn-primary" id="btn-save-settings">Save Settings</button>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.js"></script>
+<script src="js/config.js"></script>
+<script src="js/locations.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/clues.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/viewer.js"></script>
+<script src="js/map.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/multiplayer.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
