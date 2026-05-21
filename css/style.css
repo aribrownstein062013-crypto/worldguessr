@@ -600,14 +600,7 @@ button { cursor: pointer; font-family: inherit; }
 /* ────────────────────────────────────────────────────── */
 /*  LEAFLET OVERRIDES                                     */
 /* ────────────────────────────────────────────────────── */
-.leaflet-container { background: #001a00 !important; font-family: inherit; }
-
-/* Lime green map tiles */
-#guess-map .leaflet-tile-pane,
-#result-map .leaflet-tile-pane,
-#gameover-map .leaflet-tile-pane {
-  filter: sepia(1) hue-rotate(82deg) saturate(6) brightness(1.05);
-}
+.leaflet-container { background: #a8d5e2 !important; font-family: inherit; }
 .leaflet-control-zoom a {
   background: var(--surface2) !important; color: var(--text) !important;
   border-color: var(--border) !important;

@@ -72,8 +72,6 @@ function showRoundResult(result) {
   document.getElementById('result-round').textContent = result.round;
   document.getElementById('result-distance').textContent = result.guessLat != null ? formatDistance(result.distanceKm) : 'No guess';
   document.getElementById('result-score').textContent = result.score.toLocaleString();
-  document.getElementById('result-clue-penalty').textContent = result.cluePenalty ? `−${result.cluePenalty}` : '0';
-  document.getElementById('result-clue-penalty-box').style.opacity = result.cluePenalty ? '1' : '0.4';
   document.getElementById('result-location-name').textContent = result.locationName || '(looking up location…)';
   document.getElementById('result-base-score').textContent = result.baseScore.toLocaleString();
 
@@ -421,11 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-end-game').addEventListener('click', () => { if (confirm('End the game and see your score?')) endGameEarly(); });
   document.getElementById('btn-ai-analyze').addEventListener('click', openAIPanel);
   document.getElementById('btn-close-ai').addEventListener('click', closeAIPanel);
-  document.getElementById('btn-toggle-clues').addEventListener('click', () => {
-    document.getElementById('clues-float-panel').classList.toggle('open');
-  });
   document.getElementById('float-map').addEventListener('mouseenter', () => setTimeout(() => invalidateGuessMap(), 260));
-  document.querySelectorAll('.clue-btn').forEach(btn => btn.addEventListener('click', () => requestClue(btn.dataset.clue)));
   document.getElementById('btn-settings-game').addEventListener('click', openSettings);
   document.getElementById('btn-clear-guess')?.addEventListener('click', () => { clearGuessMarker(); UI.setGuessButtonEnabled(false); });
 

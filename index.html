@@ -167,25 +167,6 @@
     <button class="ai-card-close" id="btn-close-ai">✕</button>
   </div>
 
-  <!-- Clues toggle (left side) -->
-  <div class="clues-float">
-    <button class="clues-float-toggle" id="btn-toggle-clues">🔍 Clues</button>
-    <div class="clues-float-panel" id="clues-float-panel">
-      <div class="clues-header">
-        <span>Clues</span>
-        <span id="clues-used-count">0 used</span>
-      </div>
-      <div id="clues-revealed-list"></div>
-      <div class="clues-available">
-        <button class="clue-btn" data-clue="driving_side">🚗 Driving Side</button>
-        <button class="clue-btn" data-clue="climate">🌤️ Climate Zone</button>
-        <button class="clue-btn" data-clue="language">✍️ Script / Language</button>
-        <button class="clue-btn" data-clue="continent">🗺️ Continent</button>
-        <button class="clue-btn" data-clue="country">🏳️ Country</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Multiplayer live scores (floating, hidden unless MP) -->
   <div id="mp-live-panel" style="display:none">
     <div class="mp-panel-header">🎮 Live Scores</div>
@@ -213,8 +194,7 @@
   <div class="result-stats">
     <div class="stat-card"><div class="stat-label">Distance</div><div class="stat-value" id="result-distance">—</div></div>
     <div class="stat-card"><div class="stat-label">Base Score</div><div class="stat-value positive" id="result-base-score">0</div></div>
-    <div class="stat-card" id="result-clue-penalty-box"><div class="stat-label">Clue Penalty</div><div class="stat-value negative" id="result-clue-penalty">0</div></div>
-    <div class="stat-card"><div class="stat-label">Round Score</div><div class="stat-value" id="result-score" style="color:var(--gold)">0</div></div>
+<div class="stat-card"><div class="stat-label">Round Score</div><div class="stat-value" id="result-score" style="color:var(--gold)">0</div></div>
   </div>
   <div style="padding:0 16px 4px;font-size:12px;color:var(--muted)" id="result-location-name"></div>
   <div class="result-footer">
