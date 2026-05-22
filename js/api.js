@@ -95,15 +95,18 @@ async function _fetchWikimediaImageById(imageId) {
 // ── Public API ───────────────────────────────────────────────
 
 async function getRandomImageForMode(mode, subMode) {
-  for (let attempt = 0; attempt < CONFIG.maxRetries; attempt++) {
+  const makeAttempt = async () => {
+    const { bbox } = getSearchBbox(mode, subMode);
+    const pano = await _fetchMapillaryImagesInBbox(bbox, true);
+    if (!pano.length) throw new Error('empty');
+    const img = pano[Math.floor(Math.random() * pano.length)];
+    const [lng, lat] = img.computed_geometry.coordinates;
+    return { ...img, lat, lng };
+  };
+  // Fire 5 parallel attempts per wave; return as soon as any succeeds
+  for (let wave = 0; wave < 8; wave++) {
     try {
-      const { bbox } = getSearchBbox(mode, subMode);
-      const pano = await _fetchMapillaryImagesInBbox(bbox, true);
-      if (pano.length) {
-        const img = pano[Math.floor(Math.random() * pano.length)];
-        const [lng, lat] = img.computed_geometry.coordinates;
-        return { ...img, lat, lng };
-      }
+      return await Promise.any(Array.from({ length: 5 }, makeAttempt));
     } catch {}
   }
   throw new Error('No 360° images found. Try a different region.');
