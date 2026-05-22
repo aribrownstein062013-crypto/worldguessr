@@ -173,7 +173,7 @@ function openAIPanel() {
     text.textContent += chunk;
   }).catch(() => {
     popup.style.display = 'none';
-    showToast('AI overview unavailable. Add your Anthropic key in ⚙️ Settings.', 'warning', 5000);
+    showToast('AI overview temporarily unavailable.', 'warning', 3000);
   }).finally(() => {
     btn.disabled = false;
     btn.textContent = '✦ AI Overview';
