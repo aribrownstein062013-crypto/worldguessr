@@ -188,12 +188,6 @@ button { cursor: pointer; font-family: inherit; }
 /*  GAME SCREEN                                           */
 /* ────────────────────────────────────────────────────── */
 #screen-game {
-  display: grid;
-  grid-template-rows: 52px 1fr;
-  overflow: hidden;
-}
-/* ── Fullscreen game layout ───────────────────────────── */
-#screen-game {
   overflow: hidden;
   background: #000;
 }
@@ -203,6 +197,7 @@ button { cursor: pointer; font-family: inherit; }
   inset: 0;
   width: 100%;
   height: 100%;
+  pointer-events: all;
 }
 
 /* Floating HUD bar */

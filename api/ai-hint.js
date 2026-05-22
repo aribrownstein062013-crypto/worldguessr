@@ -1,5 +1,4 @@
 const https = require('https');
-const http  = require('http');
 
 module.exports = async function (req, res) {
   setCors(res);
@@ -17,22 +16,18 @@ module.exports = async function (req, res) {
 
   if (!imageUrl) { res.status(400).json({ error: 'imageUrl required' }); return; }
 
+  const PROMPT = `Look at this street-level photo and give a quick 2–3 sentence location overview. Mention the most obvious visual clues (landscape, architecture, road signs, vegetation, vehicles) and your best guess for the country or region. No headers, no bullet points — just a natural, concise paragraph.`;
+
+  const payload = JSON.stringify({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 300,
+    messages: [{ role: 'user', content: [
+      { type: 'image', source: { type: 'url', url: imageUrl } },
+      { type: 'text', text: PROMPT },
+    ]}],
+  });
+
   try {
-    const imgBuf = await nodeGet(imageUrl);
-    if (!imgBuf) { res.status(502).json({ error: 'Could not fetch image' }); return; }
-
-    const base64 = imgBuf.toString('base64');
-    const PROMPT = `Look at this street-level photo and give a quick 2–3 sentence location overview. Mention the most obvious visual clues (landscape, architecture, road signs, vegetation, vehicles) and your best guess for the country or region. No headers, no bullet points — just a natural, concise paragraph.`;
-
-    const payload = JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 300,
-      messages: [{ role: 'user', content: [
-        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
-        { type: 'text', text: PROMPT },
-      ]}],
-    });
-
     const data = await nodePost('api.anthropic.com', '/v1/messages', {
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
@@ -51,17 +46,6 @@ function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Content-Type', 'application/json');
-}
-
-function nodeGet(url) {
-  return new Promise((resolve, reject) => {
-    const mod = url.startsWith('https') ? https : http;
-    mod.get(url, r => {
-      const chunks = [];
-      r.on('data', c => chunks.push(c));
-      r.on('end', () => resolve(Buffer.concat(chunks)));
-    }).on('error', reject);
-  });
 }
 
 function nodePost(host, path, headers, body) {
