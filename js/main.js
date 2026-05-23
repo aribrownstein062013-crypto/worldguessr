@@ -166,7 +166,7 @@ function openAIPanel() {
   text.textContent = '';
 
   const image = GameState.locations?.[GameState.currentRound];
-  const thumbUrl = image?.thumb_2048_url || image?.thumb_original_url;
+  const thumbUrl = image?.thumb_256_url || image?.thumb_2048_url || image?.thumb_original_url;
   if (!thumbUrl) { popup.style.display = 'none'; btn.disabled = false; btn.textContent = '✦ AI Overview'; return; }
 
   analyzeLocationWithAI(thumbUrl, (chunk) => {

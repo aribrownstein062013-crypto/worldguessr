@@ -40,6 +40,7 @@ function initViewer(containerId, imageId) {
       const onReady = () => {
         if (settled) return;
         settled = true;
+        try { _viewer.resize(); } catch {}
         startCompassPolling();
         resolve(_viewer);
       };

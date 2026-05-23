@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "functions": {
+    "api/ai-hint.js": { "maxDuration": 30 }
+  },
   "headers": [
     {
       "source": "/(.*)",

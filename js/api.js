@@ -3,7 +3,7 @@
 async function _fetchMapillaryImagesInBbox(bbox, isPano = true) {
   const [west, south, east, north] = bbox;
   const token = CONFIG.mapillaryToken;
-  const fields = 'id,thumb_2048_url,thumb_original_url,computed_geometry';
+  const fields = 'id,thumb_256_url,thumb_2048_url,thumb_original_url,computed_geometry';
   const params = new URLSearchParams({
     access_token: token, fields,
     bbox: `${west},${south},${east},${north}`,
@@ -20,7 +20,7 @@ async function _fetchMapillaryImagesInBbox(bbox, isPano = true) {
 
 async function _fetchMapillaryImageById(imageId) {
   const token = CONFIG.mapillaryToken;
-  const fields = 'id,thumb_2048_url,thumb_original_url,computed_geometry';
+  const fields = 'id,thumb_256_url,thumb_2048_url,thumb_original_url,computed_geometry';
   const params = new URLSearchParams({ access_token: token, fields });
   const res = await fetch(`${CONFIG.mapillaryGraphUrl}/${imageId}?${params}`);
   if (!res.ok) throw new Error(`Mapillary error ${res.status}`);
